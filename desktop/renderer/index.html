@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>差压液位计算</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <header class="hero">
+        <div class="hero-badge">INSTRUMENT ENGINEERING</div>
+        <h1 class="hero-title">差压液位计算</h1>
+        <p class="hero-subtitle">量程 · 零点迁移 · 膜片静压核验</p>
+        <p class="hero-note">适用于隔膜双法兰、隔膜单法兰与引压管安装方式</p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab active" data-tab="calculator">参数计算</button>
+        <button class="tab" data-tab="history">计算历史</button>
+    </nav>
+
+    <main>
+        <!-- 计算页 -->
+        <section id="calculator-panel" class="panel">
+            <div class="mode-switch">
+                <button class="mode active" data-mode="flange">
+                    <span class="mode-title">隔膜双法兰</span>
+                    <span class="mode-caption">毛细管填充液</span>
+                </button>
+                <button class="mode" data-mode="single-flange">
+                    <span class="mode-title">隔膜单法兰</span>
+                    <span class="mode-caption">低压侧通大气/气相</span>
+                </button>
+                <button class="mode" data-mode="impulse">
+                    <span class="mode-title">引压管</span>
+                    <span class="mode-caption">湿式 / 干式负压侧</span>
+                </button>
+            </div>
+
+            <div class="convention">
+                <strong>高度正负约定：</strong>
+                <span>低压取压口高于高压取压口时 Δh 为正；变送器低于高压取压口时 hH 为正。压力单位 kPa，静压采用表压 kPa(g)。</span>
+            </div>
+
+            <div id="error-banner" class="error-banner hidden"></div>
+
+            <!-- 介质与液位 -->
+            <fieldset class="form-section">
+                <legend>介质与液位</legend>
+                <div class="field">
+                    <label>介质密度 <span class="unit">kg/m³</span></label>
+                    <input type="number" id="processDensity" step="any" placeholder="例如 1000" />
+                </div>
+                <div class="field-row">
+                    <div class="field half">
+                        <label>最小液位 h₀ <span class="unit">m</span></label>
+                        <input type="number" id="minLevel" step="any" placeholder="0.00" />
+                        <small id="minLevelHelp">相对高压取压口</small>
+                    </div>
+                    <div class="field half">
+                        <label>液位跨度 H <span class="unit">m</span></label>
+                        <input type="number" id="levelSpan" step="any" placeholder="2.00" />
+                        <small>最大液位 − 最小液位，超过 Δh 时给出预警</small>
+                    </div>
+                </div>
+            </fieldset>
+
+            <!-- 取压与液柱 -->
+            <fieldset class="form-section">
+                <legend>取压与液柱</legend>
+                <div class="field" id="tapGapField">
+                    <label>高低取压口高差 Δh <span class="unit">m</span></label>
+                    <input type="number" id="tapGap" step="any" placeholder="2.50" />
+                    <small>低压取压口相对高压取压口的高度</small>
+                </div>
+                <div class="field" id="hpColumnField">
+                    <label>高压侧液柱高度 hH <span class="unit">m</span></label>
+                    <input type="number" id="hpColumn" step="any" placeholder="1.00，可为负数" />
+                    <small id="hpColumnHelp">高压取压口高于变送器的垂直距离</small>
+                </div>
+                <div class="field" id="hpColumnStatic" style="display:none;">
+                    <label>高压侧液柱高度 hH <span class="unit">m</span></label>
+                    <div class="static-value">0.00（膜片与变送器同高，无毛细管液柱）</div>
+                    <small>单法兰通常膜片与变送器同高安装，hH 取 0，不参与迁移量计算</small>
+                </div>
+                <div class="field" id="fillDensityField">
+                    <label>毛细管填充液密度 <span class="unit">kg/m³</span></label>
+                    <input type="number" id="fillDensity" step="any" placeholder="例如 950" />
+                    <small id="fillDensityHelp">高、低压侧采用相同填充液</small>
+                </div>
+                <div class="field" id="isolDensityField" style="display:none;">
+                    <label>高压侧隔离液密度 <span class="unit">kg/m³</span></label>
+                    <input type="number" id="isolDensity" step="any" placeholder="例如 1000" />
+                </div>
+                <div class="switch-row" id="condensateSwitchRow" style="display:none;">
+                    <div class="switch-copy">
+                        <strong>负压侧存在冷凝液</strong>
+                        <small>关闭后按干式引压管处理，低压液柱压力取 0</small>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="condensateEnabled" checked />
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="field" id="condensateDensityField" style="display:none;">
+                    <label>负压侧冷凝液密度 <span class="unit">kg/m³</span></label>
+                    <input type="number" id="condensateDensity" step="any" placeholder="例如 998" />
+                    <small>冷凝液柱高度按 hL = hH + Δh 计算</small>
+                </div>
+            </fieldset>
+
+            <!-- 膜片静压核验 -->
+            <fieldset class="form-section" id="staticSection">
+                <legend>膜片静压核验</legend>
+                <div class="field">
+                    <label>设备操作压力 <span class="unit">kPa(g)</span></label>
+                    <input type="number" id="operatingPressure" step="any" placeholder="200，可为负压" />
+                    <small>设备顶部气相压力，非差压</small>
+                </div>
+                <div class="field-row">
+                    <div class="field half">
+                        <label>允许静压下限 <span class="unit">kPa(g)</span></label>
+                        <input type="number" id="staticMin" step="any" placeholder="-100" />
+                    </div>
+                    <div class="field half">
+                        <label>允许静压上限 <span class="unit">kPa(g)</span></label>
+                        <input type="number" id="staticMax" step="any" placeholder="1000" />
+                    </div>
+                </div>
+            </fieldset>
+
+            <div class="actions">
+                <button class="btn secondary" id="loadExample">载入示例</button>
+                <button class="btn primary" id="calculate">开始计算</button>
+            </div>
+
+            <div id="result-section" class="result-section hidden"></div>
+        </section>
+
+        <!-- 历史页 -->
+        <section id="history-panel" class="panel hidden">
+            <div class="history-header">
+                <div>
+                    <h2>本机计算记录</h2>
+                    <p>最多保留最近 20 次</p>
+                </div>
+                <button class="btn secondary small" id="clearHistory">清空</button>
+            </div>
+            <div id="history-list"></div>
+        </section>
+    </main>
+
+    <footer class="footer-note">
+        计算采用 g = 9.80665 m/s²。结果用于工程核算；最终选型还应校验变送器允许迁移比、精度、温度影响及制造商膜片限值。
+    </footer>
+
+    <script src="../level-calculator.browser.js"></script>
+    <script src="renderer.js"></script>
+</body>
+</html>

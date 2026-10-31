@@ -10,3 +10,6 @@ output/
 Thumbs.db
 node_modules/
 *.log
+
+# Electron 打包产物
+desktop/dist/

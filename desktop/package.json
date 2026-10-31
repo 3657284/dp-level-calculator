@@ -1,0 +1,46 @@
+{
+  "name": "dp-level-calculator-desktop",
+  "version": "1.0.0",
+  "description": "差压液位计量程与零点迁移计算桌面版（双法兰/单法兰/引压管）",
+  "main": "main.js",
+  "author": "183812389",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.dplevel.calculator",
+    "productName": "差压液位计算",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "level-calculator.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "dp-level-calculator-${version}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "差压液位计算"
+    }
+  }
+}
