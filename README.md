@@ -1,6 +1,9 @@
 # 差压液位计算小程序
 
-用于差压液位计（隔膜双法兰、隔膜单法兰、引压管）量程与零点迁移计算，并支持法兰式膜片静压核验。程序为原生微信小程序，全部计算在本机完成，无需登录或云服务。
+用于差压液位计（隔膜双法兰、隔膜单法兰、引压管）量程与零点迁移计算，并支持法兰式膜片静压核验。提供**微信小程序**与 **Windows 桌面版（Electron）** 两种形态，全部计算在本机完成，无需登录或云服务。
+
+- 微信小程序：`miniprogram/`
+- Windows 桌面版：`desktop/`（可打包为 exe 安装包）
 
 ## 功能
 
@@ -121,11 +124,26 @@ miniprogram/
 ├── project.config.json
 ├── pages/index/              # 参数输入、结果及历史页面
 └── utils/level-calculator.js # 独立计算模型与参数校验
+desktop/
+├── main.js / preload.js      # Electron 主进程
+├── level-calculator.js       # 计算模型（与小程序同一份逻辑）
+├── renderer/                 # 桌面版界面（HTML/CSS/JS）
+└── package.json              # electron-builder 打包配置
 tests/
 └── calculator.test.js        # 计算与边界条件回归测试
 output/
 └── 差压液位计算小程序技术说明.docx
 ```
+
+## 桌面版打包
+
+```bash
+cd desktop
+npm install
+npm run dist   # 生成 dist/dp-level-calculator-1.0.0-setup.exe
+```
+
+打包产物为 NSIS 安装包（未签名，安装时 Windows 会提示"未知发布者"）。桌面版与小程序共用同一计算模型，计算结果一致。
 
 ## 运行测试
 
