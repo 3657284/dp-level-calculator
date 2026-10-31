@@ -1,0 +1,23 @@
+{
+  "description": "差压液位计量程、零点迁移与膜片静压核验工具",
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": ".workbuddy"
+      }
+    ],
+    "include": []
+  },
+  "setting": {
+    "bundle": false,
+    "es6": true,
+    "minified": true,
+    "postcss": true,
+    "urlCheck": true
+  },
+  "compileType": "miniprogram",
+  "appid": "touristappid",
+  "projectname": "dp-level-calculator",
+  "miniprogramRoot": "./"
+}

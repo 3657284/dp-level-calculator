@@ -1,0 +1,249 @@
+<view class="page">
+    <view class="hero">
+        <view class="hero-badge">INSTRUMENT ENGINEERING</view>
+        <text class="hero-title">差压液位计算</text>
+        <text class="hero-subtitle">量程 · 零点迁移 · 膜片静压核验</text>
+        <view class="hero-rule"></view>
+        <text class="hero-note">适用于隔膜双法兰与引压管安装方式</text>
+    </view>
+
+    <view class="tab-bar">
+        <view class="tab-item {{activeTab === 'calculator' ? 'tab-active' : ''}}" data-tab="calculator" bindtap="switchTab">参数计算</view>
+        <view class="tab-item {{activeTab === 'history' ? 'tab-active' : ''}}" data-tab="history" bindtap="switchTab">计算历史</view>
+    </view>
+
+    <block wx:if="{{activeTab === 'calculator'}}">
+        <view class="mode-switch">
+            <view class="mode-item {{mode === 'flange' ? 'mode-active' : ''}}" data-mode="flange" bindtap="switchMode">
+                <text class="mode-title">隔膜双法兰</text>
+                <text class="mode-caption">毛细管填充液</text>
+            </view>
+            <view class="mode-item {{mode === 'single-flange' ? 'mode-active' : ''}}" data-mode="single-flange" bindtap="switchMode">
+                <text class="mode-title">隔膜单法兰</text>
+                <text class="mode-caption">低压侧通大气/气相</text>
+            </view>
+            <view class="mode-item {{mode === 'impulse' ? 'mode-active' : ''}}" data-mode="impulse" bindtap="switchMode">
+                <text class="mode-title">引压管</text>
+                <text class="mode-caption">湿式 / 干式负压侧</text>
+            </view>
+        </view>
+
+        <view class="convention-card">
+            <text class="convention-title">高度正负约定</text>
+            <text class="convention-text">低压取压口高于高压取压口时，Δh 为正；变送器低于高压取压口时，hH 为正。压力单位均为 kPa，静压采用表压 kPa(g)。</text>
+        </view>
+
+        <view class="error-banner" wx:if="{{errorList.length > 0}}">
+            <text class="error-title">请先修正 {{errorList.length}} 项输入问题</text>
+            <text class="error-item" wx:for="{{errorList}}" wx:key="index">• {{item}}</text>
+        </view>
+
+        <view class="form-section">
+            <view class="section-heading">
+                <text class="section-index">01</text>
+                <text class="section-title">介质与液位</text>
+            </view>
+
+            <view class="field {{errors.processDensity ? 'field-error-border' : ''}}">
+                <view class="field-label"><text>介质密度</text><text class="field-unit">kg/m³</text></view>
+                <input class="field-input" type="digit" value="{{form.processDensity}}" data-field="processDensity" bindinput="handleInput" placeholder="例如 1000" />
+                <text class="field-error" wx:if="{{errors.processDensity}}">{{errors.processDensity}}</text>
+            </view>
+
+            <view class="field-row">
+                <view class="field field-half {{errors.minLevel ? 'field-error-border' : ''}}">
+                    <view class="field-label"><text>最小液位 h₀</text><text class="field-unit">m</text></view>
+                    <input class="field-input" type="digit" value="{{form.minLevel}}" data-field="minLevel" bindinput="handleInput" placeholder="0.00" />
+                    <text class="field-help">{{mode === 'single-flange' ? '相对膜片安装点' : '相对高压取压口'}}</text>
+                    <text class="field-error" wx:if="{{errors.minLevel}}">{{errors.minLevel}}</text>
+                </view>
+                <view class="field field-half {{errors.levelSpan ? 'field-error-border' : ''}}">
+                    <view class="field-label"><text>液位跨度 H</text><text class="field-unit">m</text></view>
+                    <input class="field-input" type="digit" value="{{form.levelSpan}}" data-field="levelSpan" bindinput="handleInput" placeholder="2.00" />
+                    <text class="field-help">最大液位 − 最小液位，超过 Δh 时给出预警</text>
+                    <text class="field-error" wx:if="{{errors.levelSpan}}">{{errors.levelSpan}}</text>
+                </view>
+            </view>
+        </view>
+
+        <view class="form-section">
+            <view class="section-heading">
+                <text class="section-index">02</text>
+                <text class="section-title">取压与液柱</text>
+            </view>
+
+            <view class="field {{errors.tapGap ? 'field-error-border' : ''}}" wx:if="{{mode !== 'single-flange'}}">
+                <view class="field-label"><text>高低取压口高差 Δh</text><text class="field-unit">m</text></view>
+                <input class="field-input" type="digit" value="{{form.tapGap}}" data-field="tapGap" bindinput="handleInput" placeholder="2.50" />
+                <text class="field-help">低压取压口相对高压取压口的高度</text>
+                <text class="field-error" wx:if="{{errors.tapGap}}">{{errors.tapGap}}</text>
+            </view>
+
+            <view class="field {{errors.hpColumn ? 'field-error-border' : ''}}" wx:if="{{mode !== 'single-flange'}}">
+                <view class="field-label"><text>高压侧液柱高度 hH</text><text class="field-unit">m</text></view>
+                <input class="field-input" type="text" value="{{form.hpColumn}}" data-field="hpColumn" bindinput="handleInput" placeholder="1.00，可为负数" />
+                <text class="field-help">高压取压口高于变送器的垂直距离</text>
+                <text class="field-error" wx:if="{{errors.hpColumn}}">{{errors.hpColumn}}</text>
+            </view>
+
+            <view class="field" wx:if="{{mode === 'single-flange'}}">
+                <view class="field-label"><text>高压侧液柱高度 hH</text><text class="field-unit">m</text></view>
+                <view class="field-input field-input-static">0.00（膜片与变送器同高，无毛细管液柱）</view>
+                <text class="field-help">单法兰通常膜片与变送器同高安装，hH 取 0，不参与迁移量计算</text>
+            </view>
+
+            <view class="field" wx:if="{{mode === 'flange' || mode === 'single-flange'}}">
+                <view class="field-label"><text>毛细管填充液密度</text><text class="field-unit">kg/m³</text></view>
+                <input class="field-input" type="digit" value="{{form.fillDensity}}" data-field="fillDensity" bindinput="handleInput" placeholder="例如 950" />
+                <text class="field-help">{{mode === 'single-flange' ? '单法兰 hH=0 时此值不参与迁移量计算' : '高、低压侧采用相同填充液'}}</text>
+                <text class="field-error" wx:if="{{errors.fillDensity}}">{{errors.fillDensity}}</text>
+            </view>
+
+            <block wx:if="{{mode === 'impulse'}}">
+                <view class="field {{errors.isolDensity ? 'field-error-border' : ''}}">
+                    <view class="field-label"><text>高压侧隔离液密度</text><text class="field-unit">kg/m³</text></view>
+                    <input class="field-input" type="digit" value="{{form.isolDensity}}" data-field="isolDensity" bindinput="handleInput" placeholder="例如 1000" />
+                    <text class="field-error" wx:if="{{errors.isolDensity}}">{{errors.isolDensity}}</text>
+                </view>
+                <view class="switch-row">
+                    <view class="switch-copy">
+                        <text class="switch-title">负压侧存在冷凝液</text>
+                        <text class="switch-caption">关闭后按干式引压管处理，低压液柱压力取 0</text>
+                    </view>
+                    <switch checked="{{condensateEnabled}}" color="#1677a6" bindchange="toggleCondensate" />
+                </view>
+                <view class="field" wx:if="{{condensateEnabled}}">
+                    <view class="field-label"><text>负压侧冷凝液密度</text><text class="field-unit">kg/m³</text></view>
+                    <input class="field-input" type="digit" value="{{form.condensateDensity}}" data-field="condensateDensity" bindinput="handleInput" placeholder="例如 998" />
+                    <text class="field-help">冷凝液柱高度按 hL = hH + Δh 计算</text>
+                    <text class="field-error" wx:if="{{errors.condensateDensity}}">{{errors.condensateDensity}}</text>
+                </view>
+            </block>
+        </view>
+
+        <view class="form-section" wx:if="{{mode === 'flange' || mode === 'single-flange'}}">
+            <view class="section-heading">
+                <text class="section-index">03</text>
+                <text class="section-title">膜片静压核验</text>
+            </view>
+            <view class="field {{errors.operatingPressure ? 'field-error-border' : ''}}">
+                <view class="field-label"><text>设备操作压力</text><text class="field-unit">kPa(g)</text></view>
+                <input class="field-input" type="text" value="{{form.operatingPressure}}" data-field="operatingPressure" bindinput="handleInput" placeholder="200，可为负压" />
+                <text class="field-help">设备顶部气相压力，非差压</text>
+                <text class="field-error" wx:if="{{errors.operatingPressure}}">{{errors.operatingPressure}}</text>
+            </view>
+            <view class="field-row">
+                <view class="field field-half {{errors.staticMin ? 'field-error-border' : ''}}">
+                    <view class="field-label"><text>允许静压下限</text><text class="field-unit">kPa(g)</text></view>
+                    <input class="field-input" type="text" value="{{form.staticMin}}" data-field="staticMin" bindinput="handleInput" placeholder="-100" />
+                    <text class="field-error" wx:if="{{errors.staticMin}}">{{errors.staticMin}}</text>
+                </view>
+                <view class="field field-half {{errors.staticMax ? 'field-error-border' : ''}}">
+                    <view class="field-label"><text>允许静压上限</text><text class="field-unit">kPa(g)</text></view>
+                    <input class="field-input" type="text" value="{{form.staticMax}}" data-field="staticMax" bindinput="handleInput" placeholder="1000" />
+                    <text class="field-error" wx:if="{{errors.staticMax}}">{{errors.staticMax}}</text>
+                </view>
+            </view>
+        </view>
+
+        <view class="action-row">
+            <button class="secondary-button" bindtap="loadExample">载入示例</button>
+            <button class="calculate-button" bindtap="handleCalculate">开始计算</button>
+        </view>
+
+        <view class="result-section" wx:if="{{result}}">
+            <view class="result-heading">
+                <view>
+                    <text class="result-kicker">CALCULATION RESULT</text>
+                    <text class="result-title">计算结果</text>
+                </view>
+                <view class="migration-badge {{result.migrationType === '负迁移' ? 'migration-negative' : ''}}">{{result.migrationType}}</view>
+            </view>
+
+            <view class="result-primary">
+                <text class="result-label">变送器调校范围</text>
+                <text class="range-value">{{result.rangeText}}</text>
+                <view class="range-track"><view class="range-fill"></view></view>
+                <view class="range-labels"><text>LRV {{result.lrvText}}</text><text>URV {{result.urvText}}</text></view>
+            </view>
+
+            <view class="metric-row">
+                <view class="metric-card">
+                    <text class="metric-label">差压量程</text>
+                    <text class="metric-value">{{result.processSpanText}}</text>
+                    <text class="metric-unit">kPa</text>
+                </view>
+                <view class="metric-card">
+                    <text class="metric-label">零点迁移量</text>
+                    <text class="metric-value">{{result.migrationText}}</text>
+                    <text class="metric-unit">kPa</text>
+                </view>
+            </view>
+
+            <view class="warning-card" wx:if="{{warnings.length > 0}}">
+                <text class="warning-title">工程提示</text>
+                <text class="warning-item" wx:for="{{warnings}}" wx:key="index">• {{item}}</text>
+            </view>
+
+            <view class="static-card {{result.staticCheck.pass ? 'static-pass' : 'static-fail'}}" wx:if="{{result.staticCheck}}">
+                <view class="static-heading">
+                    <text class="static-title">膜片静压核验</text>
+                    <text class="static-status">{{result.staticCheck.status}}</text>
+                </view>
+                <text class="static-range">允许范围：{{result.staticCheck.rangeText}}</text>
+                <view class="static-row"><text>高压侧（最大液位）</text><text>{{result.staticCheck.hpStaticText}} kPa(g) · {{result.staticCheck.hpStatus}}</text></view>
+                <view class="static-row"><text>低压侧</text><text>{{result.staticCheck.lpStaticText}} kPa(g) · {{result.staticCheck.lpStatus}}</text></view>
+                <text class="static-note">{{result.staticCheck.note}}</text>
+            </view>
+
+            <view class="detail-card">
+                <text class="detail-title">计算步骤</text>
+                <view class="step-item" wx:for="{{result.steps}}" wx:key="title">
+                    <text class="step-title">{{item.title}}</text>
+                    <text class="step-formula">{{item.formula}}</text>
+                    <text class="step-value">{{item.value}}</text>
+                </view>
+            </view>
+
+            <view class="detail-card">
+                <text class="detail-title">输入参数复核</text>
+                <view class="input-summary" wx:for="{{result.inputs}}" wx:key="label">
+                    <text class="summary-label">{{item.label}}</text>
+                    <text class="summary-value">{{item.value}}</text>
+                </view>
+            </view>
+        </view>
+    </block>
+
+    <block wx:if="{{activeTab === 'history'}}">
+        <view class="history-header">
+            <view>
+                <text class="history-title">本机计算记录</text>
+                <text class="history-caption">最多保留最近 20 次，不占用云端空间</text>
+            </view>
+            <button class="clear-button" size="mini" bindtap="clearHistory" wx:if="{{history.length > 0}}">清空</button>
+        </view>
+        <view class="empty-card" wx:if="{{history.length === 0}}">
+            <view class="empty-symbol">∅</view>
+            <text class="empty-title">暂无计算历史</text>
+            <text class="empty-caption">完成一次计算后会自动保存在本机</text>
+        </view>
+        <view class="history-card" wx:for="{{history}}" wx:key="id" data-id="{{item.id}}" bindtap="applyHistory">
+            <view class="history-top">
+                <view class="history-mode">{{item.modeText}}</view>
+                <text class="history-time">{{item.createdAt}}</text>
+            </view>
+            <text class="history-range">{{item.rangeText}}</text>
+            <text class="history-migration">{{item.migrationText}}</text>
+            <view class="history-bottom">
+                <text class="history-static">{{item.staticText}}</text>
+                <button class="delete-button" size="mini" data-id="{{item.id}}" catchtap="deleteHistory">删除</button>
+            </view>
+            <text class="history-load">点击记录可恢复参数并重新计算</text>
+        </view>
+    </block>
+
+    <view class="footer-note">
+        <text>计算采用 g = 9.80665 m/s²。结果用于工程核算；最终选型还应校验变送器允许迁移比、精度、温度影响及制造商膜片限值。</text>
+    </view>
+</view>

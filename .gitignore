@@ -1,0 +1,12 @@
+# WorkBuddy 本机应用与工作区信息（不随源码公开）
+.wbapp_*.genie
+.workbuddy/
+
+# 生成的输出文档
+output/
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+node_modules/
+*.log
