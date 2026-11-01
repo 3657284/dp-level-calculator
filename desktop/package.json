@@ -24,6 +24,7 @@
       "preload.js",
       "renderer/**/*",
       "level-calculator.js",
+      "level-calculator.browser.js",
       "package.json"
     ],
     "win": {
@@ -31,9 +32,14 @@
         {
           "target": "nsis",
           "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
         }
       ],
-      "artifactName": "dp-level-calculator-${version}-setup.${ext}",
+      "icon": "icon.ico",
+      "artifactName": "dp-level-calculator-${version}-${arch}.${ext}",
       "signAndEditExecutable": false
     },
     "nsis": {
