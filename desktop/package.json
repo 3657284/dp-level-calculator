@@ -39,15 +39,18 @@
         }
       ],
       "icon": "icon.ico",
-      "artifactName": "dp-level-calculator-${version}-${arch}.${ext}",
       "signAndEditExecutable": false
     },
     "nsis": {
+      "artifactName": "dp-level-calculator-${version}-setup.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "差压液位计算"
+    },
+    "portable": {
+      "artifactName": "dp-level-calculator-${version}-portable.${ext}"
     }
   }
 }
