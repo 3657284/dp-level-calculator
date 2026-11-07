@@ -108,7 +108,10 @@ function calculateLevel(form, mode, condensateEnabled) {
     // 单法兰：膜片与变送器同高安装、无长毛细管，hH 恒为 0
     const effectiveHpColumn = isSingleFlange ? 0 : hpColumn;
 
-    const processSpan = processDensity * GRAVITY * levelSpan / 1000;
+    // 液位跨度超过高低取压口高差时，差压量程按取压口高差截断
+    const levelSpanTruncated = !isSingleFlange && levelSpan > tapGap;
+    const effectiveLevelSpan = levelSpanTruncated ? tapGap : levelSpan;
+    const processSpan = processDensity * GRAVITY * effectiveLevelSpan / 1000;
     const processZero = processDensity * GRAVITY * minLevel / 1000;
     const hpLegPressure = fillOrIsolDensity * GRAVITY * effectiveHpColumn / 1000;
     const lpLegPressure = isFlange
@@ -147,10 +150,10 @@ function calculateLevel(form, mode, condensateEnabled) {
         }
     }
 
-    // 液位跨度超过取压口高差的预警（不再报错，量程仍按液位跨度计算）
+    // 液位跨度超过取压口高差时，量程已按取压口高差截断
     if (!isSingleFlange && Number.isFinite(levelSpan) && Number.isFinite(tapGap)) {
-        if (levelSpan > tapGap) {
-            warnings.push('液位跨度 H 大于高低取压口高差 Δh，满量程差压仍按液位跨度 H 计算，请确认最大液位未超出低压取压口、负压侧无介质倒灌。');
+        if (levelSpanTruncated) {
+            warnings.push('液位跨度 H 大于高低取压口高差 Δh，差压量程已按取压口高差 Δh 截断计算；请确认最大液位未超出低压取压口、负压侧无介质倒灌。');
         } else if (minLevel + levelSpan > tapGap) {
             warnings.push('最大液位 h₀ + H 超过低压取压口高度 Δh，请确认高液位时负压侧不会进液。');
         }
@@ -183,8 +186,10 @@ function calculateLevel(form, mode, condensateEnabled) {
         },
         {
             title: '2. 计算差压量程',
-            formula: 'ΔPspan = ρ介质 × g × H / 1000',
-            value: fixed(processDensity, 1) + ' × 9.80665 × ' + fixed(levelSpan) + ' / 1000 = ' + fixed(processSpan) + ' kPa',
+            formula: levelSpanTruncated
+                ? 'ΔPspan = ρ介质 × g × Δh / 1000（H > Δh，按 Δh 截断）'
+                : 'ΔPspan = ρ介质 × g × H / 1000',
+            value: fixed(processDensity, 1) + ' × 9.80665 × ' + fixed(effectiveLevelSpan) + ' / 1000 = ' + fixed(processSpan) + ' kPa',
         },
         {
             title: '3. 计算最小液位时差压（迁移量）',
@@ -232,6 +237,8 @@ function calculateLevel(form, mode, condensateEnabled) {
         result: {
             mode: mode,
             processSpan: processSpan,
+            effectiveLevelSpan: effectiveLevelSpan,
+            levelSpanTruncated: levelSpanTruncated,
             migration: migration,
             lrv: lrv,
             urv: urv,

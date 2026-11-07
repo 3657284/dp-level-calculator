@@ -68,7 +68,9 @@ assert(invalidRange.errors.levelSpan);
 const spanExceedsTapGap = calculateLevel(Object.assign({}, flangeForm, { levelSpan: '3' }), 'flange', true);
 assert.strictEqual(spanExceedsTapGap.errorList.length, 0, '跨度超过高差不应报错');
 assert(spanExceedsTapGap.result !== null, '跨度超过高差应正常出结果');
-close(spanExceedsTapGap.result.processSpan, 1000 * GRAVITY * 3 / 1000, '跨度超过高差时量程仍按跨度计算');
+close(spanExceedsTapGap.result.processSpan, 1000 * GRAVITY * 2.5 / 1000, '跨度超过高差时量程应按高差截断计算');
+assert.strictEqual(spanExceedsTapGap.result.effectiveLevelSpan, 2.5, '有效量程跨度应等于取压口高差');
+assert.strictEqual(spanExceedsTapGap.result.levelSpanTruncated, true, '应标记量程已截断');
 assert(spanExceedsTapGap.warnings.some(item => item.indexOf('液位跨度 H 大于') >= 0), '跨度超过高差应给出预警');
 
 const maxLevelExceedsTap = calculateLevel(Object.assign({}, flangeForm, { minLevel: '1', levelSpan: '2' }), 'flange', true);
